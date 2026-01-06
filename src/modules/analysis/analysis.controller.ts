@@ -6,6 +6,7 @@ import {
   BadRequestException,
   HttpCode,
   HttpStatus,
+  Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AnalysisService } from './analysis.service';
@@ -32,11 +33,14 @@ export class AnalysisController {
       },
     }),
   )
-  async analyzeShop(@UploadedFile() file: Express.Multer.File) {
+  async analyzeShop(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('shopId') shopId?: string,
+  ) {
     if (!file) {
       throw new BadRequestException('Image file is required');
     }
 
-    return this.analysisService.analyzeShop(file);
+    return this.analysisService.analyzeShop(file, shopId);
   }
 }

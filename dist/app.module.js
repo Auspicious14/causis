@@ -9,7 +9,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
+const typeorm_1 = require("@nestjs/typeorm");
 const analysis_module_1 = require("./modules/analysis/analysis.module");
+const analysis_entity_1 = require("./modules/analysis/entities/analysis.entity");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -19,6 +21,12 @@ exports.AppModule = AppModule = __decorate([
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
                 envFilePath: '.env',
+            }),
+            typeorm_1.TypeOrmModule.forRoot({
+                type: 'sqlite',
+                database: 'database.sqlite',
+                entities: [analysis_entity_1.Analysis],
+                synchronize: true,
             }),
             analysis_module_1.AnalysisModule,
         ],

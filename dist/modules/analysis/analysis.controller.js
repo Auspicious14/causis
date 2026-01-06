@@ -20,11 +20,11 @@ let AnalysisController = class AnalysisController {
     constructor(analysisService) {
         this.analysisService = analysisService;
     }
-    async analyzeShop(file) {
+    async analyzeShop(file, shopId) {
         if (!file) {
             throw new common_1.BadRequestException('Image file is required');
         }
-        return this.analysisService.analyzeShop(file);
+        return this.analysisService.analyzeShop(file, shopId);
     }
 };
 exports.AnalysisController = AnalysisController;
@@ -43,8 +43,9 @@ __decorate([
         },
     })),
     __param(0, (0, common_1.UploadedFile)()),
+    __param(1, (0, common_1.Body)('shopId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], AnalysisController.prototype, "analyzeShop", null);
 exports.AnalysisController = AnalysisController = __decorate([

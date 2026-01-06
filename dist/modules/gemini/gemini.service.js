@@ -28,7 +28,7 @@ let GeminiService = GeminiService_1 = class GeminiService {
             model: "gemini-2.5-flash",
         });
     }
-    async analyzeShopImage(base64Image, mimeType) {
+    async analyzeShopImage(base64Image, mimeType, previousAnalysis) {
         const startTime = Date.now();
         const maxRetries = 3;
         let attempt = 0;
@@ -41,10 +41,14 @@ let GeminiService = GeminiService_1 = class GeminiService {
                         mimeType: mimeType,
                     },
                 };
-                const result = await this.model.generateContent([
-                    shop_analysis_prompt_1.SHOP_ANALYSIS_SYSTEM_PROMPT,
-                    imagePart,
-                ]);
+                let parts;
+                if (previousAnalysis) {
+                    parts = [(0, shop_analysis_prompt_1.TEMPORAL_COMPARISON_PROMPT)(previousAnalysis), imagePart];
+                }
+                else {
+                    parts = [shop_analysis_prompt_1.SHOP_ANALYSIS_SYSTEM_PROMPT, imagePart];
+                }
+                const result = await this.model.generateContent(parts);
                 const response = await result.response;
                 const rawText = response.text();
                 const latency = Date.now() - startTime;
@@ -74,36 +78,68 @@ let GeminiService = GeminiService_1 = class GeminiService {
                 rawText.match(/```\s*([\s\S]*?)\s*```/);
             const jsonText = jsonMatch ? jsonMatch[1] : rawText;
             const parsed = JSON.parse(jsonText.trim());
+            const isTemporal = !!parsed.changes_detected || !!parsed.updated_state_summary;
             return {
                 understanding: {
                     title: parsed.understanding?.title ||
                         parsed.currentUnderstanding?.title ||
-                        "Shop Analysis",
-                    description: parsed.understanding?.description ||
+                        parsed.scene_type ||
+                        (isTemporal ? "Shop Evolution Analysis" : "Shop Analysis"),
+                    description: parsed.updated_state_summary ||
+                        parsed.understanding?.description ||
                         parsed.currentUnderstanding?.description ||
+                        parsed.current_understanding ||
                         "",
                     strengths: parsed.understanding?.strengths ||
                         parsed.currentUnderstanding?.strengths ||
+                        parsed.strengths ||
                         [],
                 },
-                hiddenIssues: (parsed.hiddenIssues || []).map((issue) => ({
+                changes: parsed.changes_detected
+                    ? {
+                        detected: parsed.changes_detected.length > 0,
+                        improvements: parsed.changes_detected
+                            .filter((c) => c.direction === "improved")
+                            .map((c) => c.change),
+                        regressions: parsed.changes_detected
+                            .filter((c) => c.direction === "worsened")
+                            .map((c) => c.change),
+                        description: parsed.changes_detected
+                            .map((c) => `${c.change} (${c.direction}): ${c.evidence}`)
+                            .join("\n"),
+                    }
+                    : parsed.changes || parsed.comparison_result || undefined,
+                hiddenIssues: (parsed.issue_trends ||
+                    parsed.hiddenIssues ||
+                    parsed.hidden_issues ||
+                    []).map((issue) => ({
                     issue: issue.issue || issue.title || "",
-                    impact: issue.impact || issue.description || "",
-                    severity: this.normalizeSeverity(issue.severity || issue.priority),
+                    impact: issue.reasoning ||
+                        issue.impact ||
+                        issue.description ||
+                        issue.explanation ||
+                        "",
+                    severity: this.normalizeSeverity(issue.trend === "worsening"
+                        ? "high"
+                        : issue.severity || issue.priority),
                 })),
                 futureOutcome: {
                     withoutChanges: parsed.futureOutcome?.withoutChanges ||
                         parsed.likelyFutureOutcome?.withoutChanges ||
+                        parsed.future_outlook?.without_changes ||
                         "",
                     withChanges: parsed.futureOutcome?.withChanges ||
                         parsed.likelyFutureOutcome?.withChanges ||
+                        parsed.future_outlook?.with_changes ||
                         "",
                 },
-                recommendations: (parsed.recommendations ||
+                recommendations: (parsed.updated_recommendations ||
+                    parsed.recommendations ||
                     parsed.recommendedActions ||
+                    parsed.recommended_actions ||
                     []).map((rec) => ({
                     action: rec.action || rec.title || "",
-                    why: rec.why || rec.explanation || rec.reason || "",
+                    why: rec.reasoning || rec.why || rec.explanation || rec.reason || "",
                     priority: this.normalizePriority(rec.priority || rec.rank),
                     cost: rec.cost || "Not specified",
                     timeframe: rec.timeframe || rec.timeline || "Not specified",

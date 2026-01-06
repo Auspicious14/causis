@@ -6,7 +6,7 @@ export declare class GeminiService {
     private readonly genAI;
     private readonly model;
     constructor(configService: ConfigService);
-    analyzeShopImage(base64Image: string, mimeType: string): Promise<AnalysisResult>;
+    analyzeShopImage(base64Image: string, mimeType: string, previousAnalysis?: string): Promise<AnalysisResult>;
     private parseGeminiResponse;
     private normalizeSeverity;
     private normalizePriority;
