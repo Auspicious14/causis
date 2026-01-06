@@ -4,6 +4,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
   SHOP_ANALYSIS_SYSTEM_PROMPT,
   TEMPORAL_COMPARISON_PROMPT,
+  SCENE_CONSISTENCY_PROMPT,
 } from "./prompts/shop-analysis.prompt";
 import { AnalysisResult } from "../analysis/dto/analysis-result.dto";
 
@@ -89,6 +90,49 @@ export class GeminiService {
         this.logger.error("Gemini API call failed", error.stack);
         throw error;
       }
+    }
+  }
+
+  async checkSceneConsistency(
+    base64Image: string,
+    mimeType: string,
+    previousAnalysis: string
+  ): Promise<{
+    isSameEnvironment: boolean;
+    confidence: "high" | "medium" | "low";
+    reasoning: string;
+  }> {
+    try {
+      const imagePart = {
+        inlineData: {
+          data: base64Image,
+          mimeType: mimeType,
+        },
+      };
+
+      const parts = [SCENE_CONSISTENCY_PROMPT(previousAnalysis), imagePart];
+      const result = await this.model.generateContent(parts);
+      const response = await result.response;
+      const rawText = response.text();
+
+      const jsonMatch =
+        rawText.match(/```json\s*([\s\S]*?)\s*```/) ||
+        rawText.match(/```\s*([\s\S]*?)\s*```/);
+      const jsonText = jsonMatch ? jsonMatch[1] : rawText;
+      const parsed = JSON.parse(jsonText.trim());
+
+      return {
+        isSameEnvironment: !!parsed.is_same_environment,
+        confidence: parsed.confidence || "medium",
+        reasoning: parsed.reasoning || "",
+      };
+    } catch (error) {
+      this.logger.error("Scene consistency check failed", error.stack);
+      return {
+        isSameEnvironment: true,
+        confidence: "low",
+        reasoning: "Check failed, proceeding with caution.",
+      };
     }
   }
 

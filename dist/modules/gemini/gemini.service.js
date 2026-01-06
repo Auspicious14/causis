@@ -72,6 +72,37 @@ let GeminiService = GeminiService_1 = class GeminiService {
             }
         }
     }
+    async checkSceneConsistency(base64Image, mimeType, previousAnalysis) {
+        try {
+            const imagePart = {
+                inlineData: {
+                    data: base64Image,
+                    mimeType: mimeType,
+                },
+            };
+            const parts = [(0, shop_analysis_prompt_1.SCENE_CONSISTENCY_PROMPT)(previousAnalysis), imagePart];
+            const result = await this.model.generateContent(parts);
+            const response = await result.response;
+            const rawText = response.text();
+            const jsonMatch = rawText.match(/```json\s*([\s\S]*?)\s*```/) ||
+                rawText.match(/```\s*([\s\S]*?)\s*```/);
+            const jsonText = jsonMatch ? jsonMatch[1] : rawText;
+            const parsed = JSON.parse(jsonText.trim());
+            return {
+                isSameEnvironment: !!parsed.is_same_environment,
+                confidence: parsed.confidence || "medium",
+                reasoning: parsed.reasoning || "",
+            };
+        }
+        catch (error) {
+            this.logger.error("Scene consistency check failed", error.stack);
+            return {
+                isSameEnvironment: true,
+                confidence: "low",
+                reasoning: "Check failed, proceeding with caution.",
+            };
+        }
+    }
     parseGeminiResponse(rawText) {
         try {
             const jsonMatch = rawText.match(/```json\s*([\s\S]*?)\s*```/) ||

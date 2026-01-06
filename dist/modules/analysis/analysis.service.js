@@ -32,14 +32,37 @@ let AnalysisService = AnalysisService_1 = class AnalysisService {
             const base64Image = file.buffer.toString("base64");
             const mimeType = file.mimetype;
             let previousAnalysis;
+            let identityMismatch = undefined;
             if (shopId) {
                 const lastAnalysis = await this.analysisRepository.findOne({
                     where: { shopId },
                     order: { createdAt: "DESC" },
                 });
                 if (lastAnalysis) {
-                    this.logger.log(`Found previous analysis for shop ${shopId}`);
+                    this.logger.log(`Found previous analysis for shop ${shopId}. Verifying consistency...`);
                     previousAnalysis = lastAnalysis.result;
+                    const consistency = await this.geminiService.checkSceneConsistency(base64Image, mimeType, previousAnalysis);
+                    if (!consistency.isSameEnvironment &&
+                        consistency.confidence === "high") {
+                        this.logger.warn(`Scene consistency mismatch detected for shop ${shopId}`);
+                        identityMismatch = {
+                            isMismatch: true,
+                            reasoning: consistency.reasoning,
+                            confidence: consistency.confidence,
+                        };
+                        return {
+                            shopId,
+                            identityMismatch,
+                            understanding: {
+                                title: "Identity Mismatch",
+                                description: consistency.reasoning,
+                                strengths: [],
+                            },
+                            hiddenIssues: [],
+                            futureOutcome: { withoutChanges: "", withChanges: "" },
+                            recommendations: [],
+                        };
+                    }
                 }
             }
             const result = await this.geminiService.analyzeShopImage(base64Image, mimeType, previousAnalysis);

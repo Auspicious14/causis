@@ -1,5 +1,10 @@
 export interface AnalysisResult {
     shopId?: string;
+    identityMismatch?: {
+        isMismatch: boolean;
+        reasoning: string;
+        confidence: "high" | "medium" | "low";
+    };
     understanding: {
         title: string;
         description: string;

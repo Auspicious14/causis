@@ -7,6 +7,11 @@ export declare class GeminiService {
     private readonly model;
     constructor(configService: ConfigService);
     analyzeShopImage(base64Image: string, mimeType: string, previousAnalysis?: string): Promise<AnalysisResult>;
+    checkSceneConsistency(base64Image: string, mimeType: string, previousAnalysis: string): Promise<{
+        isSameEnvironment: boolean;
+        confidence: "high" | "medium" | "low";
+        reasoning: string;
+    }>;
     private parseGeminiResponse;
     private normalizeSeverity;
     private normalizePriority;

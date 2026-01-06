@@ -33,6 +33,7 @@ export class AnalysisService {
       const mimeType = file.mimetype;
 
       let previousAnalysis: string | undefined;
+      let identityMismatch: any = undefined;
 
       // If shopId is provided, fetch the latest analysis
       if (shopId) {
@@ -42,8 +43,45 @@ export class AnalysisService {
         });
 
         if (lastAnalysis) {
-          this.logger.log(`Found previous analysis for shop ${shopId}`);
+          this.logger.log(
+            `Found previous analysis for shop ${shopId}. Verifying consistency...`
+          );
           previousAnalysis = lastAnalysis.result;
+
+          const consistency = await this.geminiService.checkSceneConsistency(
+            base64Image,
+            mimeType,
+            previousAnalysis
+          );
+
+          if (
+            !consistency.isSameEnvironment &&
+            consistency.confidence === "high"
+          ) {
+            this.logger.warn(
+              `Scene consistency mismatch detected for shop ${shopId}`
+            );
+            identityMismatch = {
+              isMismatch: true,
+              reasoning: consistency.reasoning,
+              confidence: consistency.confidence,
+            };
+
+            // In case of mismatch, we don't proceed with temporal analysis
+            // but we still return the shopId so FE knows which session triggered it
+            return {
+              shopId,
+              identityMismatch,
+              understanding: {
+                title: "Identity Mismatch",
+                description: consistency.reasoning,
+                strengths: [],
+              },
+              hiddenIssues: [],
+              futureOutcome: { withoutChanges: "", withChanges: "" },
+              recommendations: [],
+            } as AnalysisResult;
+          }
         }
       }
 

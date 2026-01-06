@@ -303,3 +303,31 @@ OUTPUT FORMAT (STRICT JSON):
 
 Respond ONLY with valid JSON.
 `;
+
+export const SCENE_CONSISTENCY_PROMPT = (previousAnalysis: string) => `
+You are a multimodal system verifying whether a NEW VISUAL INPUT represents the SAME physical environment as described in a PREVIOUS SYSTEM STATE.
+
+PREVIOUS SYSTEM STATE:
+${previousAnalysis}
+
+TASK:
+Assess whether the new image plausibly belongs to the the same shop/environment. 
+Look for:
+- Core structural layout (wall positions, door locations)
+- Fixed display unit patterns
+- General shop type consistency (e.g. if previous was a "Gourmet Grocer" and this is a "Electronics Repair Shop", it's a mismatch)
+
+Allow for:
+- Different camera angles/depth
+- Small movements of stock or loose items
+- Lighting changes
+
+OUTPUT FORMAT (JSON ONLY):
+{
+  "is_same_environment": boolean,
+  "confidence": "high" | "medium" | "low",
+  "reasoning": string
+}
+
+Respond ONLY with valid JSON.
+`;

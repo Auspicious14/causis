@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TEMPORAL_COMPARISON_PROMPT = exports.SHOP_ANALYSIS_SYSTEM_PROMPT = void 0;
+exports.SCENE_CONSISTENCY_PROMPT = exports.TEMPORAL_COMPARISON_PROMPT = exports.SHOP_ANALYSIS_SYSTEM_PROMPT = void 0;
 exports.SHOP_ANALYSIS_SYSTEM_PROMPT = `  You are a multimodal reasoning system designed to analyze real-world retail environments from visual input.
 
 Your role is NOT to describe images.
@@ -234,4 +234,32 @@ OUTPUT FORMAT (STRICT JSON):
 Respond ONLY with valid JSON.
 `;
 exports.TEMPORAL_COMPARISON_PROMPT = TEMPORAL_COMPARISON_PROMPT;
+const SCENE_CONSISTENCY_PROMPT = (previousAnalysis) => `
+You are a multimodal system verifying whether a NEW VISUAL INPUT represents the SAME physical environment as described in a PREVIOUS SYSTEM STATE.
+
+PREVIOUS SYSTEM STATE:
+${previousAnalysis}
+
+TASK:
+Assess whether the new image plausibly belongs to the the same shop/environment. 
+Look for:
+- Core structural layout (wall positions, door locations)
+- Fixed display unit patterns
+- General shop type consistency (e.g. if previous was a "Gourmet Grocer" and this is a "Electronics Repair Shop", it's a mismatch)
+
+Allow for:
+- Different camera angles/depth
+- Small movements of stock or loose items
+- Lighting changes
+
+OUTPUT FORMAT (JSON ONLY):
+{
+  "is_same_environment": boolean,
+  "confidence": "high" | "medium" | "low",
+  "reasoning": string
+}
+
+Respond ONLY with valid JSON.
+`;
+exports.SCENE_CONSISTENCY_PROMPT = SCENE_CONSISTENCY_PROMPT;
 //# sourceMappingURL=shop-analysis.prompt.js.map
