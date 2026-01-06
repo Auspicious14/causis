@@ -15,6 +15,7 @@ var AnalysisService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnalysisService = void 0;
 const common_1 = require("@nestjs/common");
+const crypto_1 = require("crypto");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const gemini_service_1 = require("../gemini/gemini.service");
@@ -28,13 +29,13 @@ let AnalysisService = AnalysisService_1 = class AnalysisService {
     async analyzeShop(file, shopId) {
         this.logger.log(`Analyzing shop image: ${file.originalname} (${file.size} bytes)`);
         try {
-            const base64Image = file.buffer.toString('base64');
+            const base64Image = file.buffer.toString("base64");
             const mimeType = file.mimetype;
             let previousAnalysis;
             if (shopId) {
                 const lastAnalysis = await this.analysisRepository.findOne({
                     where: { shopId },
-                    order: { createdAt: 'DESC' },
+                    order: { createdAt: "DESC" },
                 });
                 if (lastAnalysis) {
                     this.logger.log(`Found previous analysis for shop ${shopId}`);
@@ -42,19 +43,21 @@ let AnalysisService = AnalysisService_1 = class AnalysisService {
                 }
             }
             const result = await this.geminiService.analyzeShopImage(base64Image, mimeType, previousAnalysis);
-            if (shopId) {
-                await this.analysisRepository.save({
-                    shopId,
-                    result: JSON.stringify(result),
-                });
-                this.logger.log(`Saved new analysis for shop ${shopId}`);
-            }
-            this.logger.log('Analysis completed successfully');
-            return result;
+            const finalShopId = shopId || (0, crypto_1.randomUUID)();
+            await this.analysisRepository.save({
+                shopId: finalShopId,
+                result: JSON.stringify(result),
+            });
+            this.logger.log(`Saved analysis for shop ${finalShopId}`);
+            this.logger.log("Analysis completed successfully");
+            return {
+                ...result,
+                shopId: finalShopId,
+            };
         }
         catch (error) {
-            this.logger.error('Analysis failed', error.stack);
-            throw new common_1.InternalServerErrorException('Failed to analyze shop image. Please try again.');
+            this.logger.error("Analysis failed", error.stack);
+            throw new common_1.InternalServerErrorException("Failed to analyze shop image. Please try again.");
         }
     }
 };

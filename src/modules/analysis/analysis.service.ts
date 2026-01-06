@@ -1,9 +1,14 @@
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { GeminiService } from '../gemini/gemini.service';
-import { AnalysisResult } from './dto/analysis-result.dto';
-import { Analysis } from './entities/analysis.entity';
+import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from "@nestjs/common";
+import { randomUUID } from "crypto";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "typeorm";
+import { GeminiService } from "../gemini/gemini.service";
+import { AnalysisResult } from "./dto/analysis-result.dto";
+import { Analysis } from "./entities/analysis.entity";
 
 @Injectable()
 export class AnalysisService {
@@ -12,14 +17,19 @@ export class AnalysisService {
   constructor(
     private readonly geminiService: GeminiService,
     @InjectRepository(Analysis)
-    private readonly analysisRepository: Repository<Analysis>,
+    private readonly analysisRepository: Repository<Analysis>
   ) {}
 
-  async analyzeShop(file: Express.Multer.File, shopId?: string): Promise<AnalysisResult> {
-    this.logger.log(`Analyzing shop image: ${file.originalname} (${file.size} bytes)`);
+  async analyzeShop(
+    file: Express.Multer.File,
+    shopId?: string
+  ): Promise<AnalysisResult> {
+    this.logger.log(
+      `Analyzing shop image: ${file.originalname} (${file.size} bytes)`
+    );
 
     try {
-      const base64Image = file.buffer.toString('base64');
+      const base64Image = file.buffer.toString("base64");
       const mimeType = file.mimetype;
 
       let previousAnalysis: string | undefined;
@@ -28,7 +38,7 @@ export class AnalysisService {
       if (shopId) {
         const lastAnalysis = await this.analysisRepository.findOne({
           where: { shopId },
-          order: { createdAt: 'DESC' },
+          order: { createdAt: "DESC" },
         });
 
         if (lastAnalysis) {
@@ -40,24 +50,29 @@ export class AnalysisService {
       const result = await this.geminiService.analyzeShopImage(
         base64Image,
         mimeType,
-        previousAnalysis,
+        previousAnalysis
       );
 
       // Save the new analysis
-      if (shopId) {
-        await this.analysisRepository.save({
-          shopId,
-          result: JSON.stringify(result),
-        });
-        this.logger.log(`Saved new analysis for shop ${shopId}`);
-      }
+      const finalShopId = shopId || randomUUID();
 
-      this.logger.log('Analysis completed successfully');
-      return result;
+      await this.analysisRepository.save({
+        shopId: finalShopId,
+        result: JSON.stringify(result),
+      });
+
+      this.logger.log(`Saved analysis for shop ${finalShopId}`);
+
+      this.logger.log("Analysis completed successfully");
+
+      return {
+        ...result,
+        shopId: finalShopId,
+      };
     } catch (error) {
-      this.logger.error('Analysis failed', error.stack);
+      this.logger.error("Analysis failed", error.stack);
       throw new InternalServerErrorException(
-        'Failed to analyze shop image. Please try again.',
+        "Failed to analyze shop image. Please try again."
       );
     }
   }

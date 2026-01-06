@@ -1,4 +1,5 @@
 export interface AnalysisResult {
+  shopId?: string;
   understanding: {
     title: string;
     description: string;
@@ -13,7 +14,7 @@ export interface AnalysisResult {
   hiddenIssues: Array<{
     issue: string;
     impact: string;
-    severity: 'low' | 'medium' | 'high';
+    severity: "low" | "medium" | "high";
   }>;
   futureOutcome: {
     withoutChanges: string;
@@ -22,7 +23,7 @@ export interface AnalysisResult {
   recommendations: Array<{
     action: string;
     why: string;
-    priority: 'low' | 'medium' | 'high';
+    priority: "low" | "medium" | "high";
     cost: string;
     timeframe: string;
   }>;
