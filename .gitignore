@@ -1,2 +1,23 @@
 node_modules/
 .env
+.env.local
+.env.production
+dist/
+*.sqlite
+*.db
+
+# Vercel
+.vercel
+.vercel.json.backup
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
