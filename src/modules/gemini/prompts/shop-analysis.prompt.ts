@@ -239,13 +239,15 @@ Identify what has meaningfully changed since the previous state.
 - Layout changes
 - Congestion changes
 - Product visibility changes
+- New inventory or equipment
+- Signs of degradation or wear
 If no clear change is visible, explicitly say so.
 
-2. TREND ANALYSIS
-For each previously identified issue:
-- Has it improved, worsened, or remained unchanged?
-- Explain the evidence for your judgment.
-- State confidence level (high / medium / low).
+2. GAIN & REGRESSION ANALYSIS
+For each change, classify it as:
+- GAIN (Improvement): Better flow, new stock, cleaner space, better organization.
+- REGRESSION (Worsening): Clutter, damage, stockouts, congestion.
+- NEUTRAL: Just different, neither better nor worse.
 
 3. CAUSAL UPDATE
 Explain WHY these changes may have occurred.
@@ -278,7 +280,7 @@ OUTPUT FORMAT (STRICT JSON):
   "changes_detected": [
     {
       "change": string,
-      "direction": "improved" | "worsened" | "unchanged",
+      "direction": "improved" | "worsened" | "neutral",
       "evidence": string,
       "confidence": "high" | "medium" | "low"
     }

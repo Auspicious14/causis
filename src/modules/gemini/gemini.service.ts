@@ -253,6 +253,30 @@ export class GeminiService {
     return "medium";
   }
 
+  private isImprovement(direction: string): boolean {
+    if (!direction) return false;
+    const d = String(direction).toLowerCase();
+    return (
+      d.includes("improv") ||
+      d.includes("positive") ||
+      d.includes("better") ||
+      d.includes("gain") ||
+      d.includes("new")
+    );
+  }
+
+  private isRegression(direction: string): boolean {
+    if (!direction) return false;
+    const d = String(direction).toLowerCase();
+    return (
+      d.includes("wors") ||
+      d.includes("negative") ||
+      d.includes("regress") ||
+      d.includes("decline") ||
+      d.includes("loss")
+    );
+  }
+
   private createFallbackResponse(rawText: string): AnalysisResult {
     return {
       understanding: {
