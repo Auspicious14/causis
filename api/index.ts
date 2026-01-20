@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
-import { ValidationPipe } from "@nestjs/common";
+import { ValidationPipe, RequestMethod } from "@nestjs/common";
 import { ExpressAdapter } from "@nestjs/platform-express";
 import { AppModule } from "../src/app.module";
 const express = require("express");
@@ -32,7 +32,9 @@ async function bootstrap() {
       })
     );
 
-    app.setGlobalPrefix("api");
+    app.setGlobalPrefix("api", {
+      exclude: [{ path: "/", method: RequestMethod.GET }],
+    });
     await app.init();
     cachedApp = expressApp;
   }
